@@ -4,6 +4,7 @@ package com.cg.loanemicalculator.controller;
 
 
 import com.cg.loanemicalculator.dto.AuthResponseDTO;
+import com.cg.loanemicalculator.dto.LoginDTO;
 import com.cg.loanemicalculator.dto.RegisterDTO;
 import com.cg.loanemicalculator.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,12 @@ class UserController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO<String, String>> registerUser(@RequestBody RegisterDTO registerDTO) {
         AuthResponseDTO<String, String> response = userService.registerUser(registerDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponseDTO<String, String>> loginUser(@RequestBody LoginDTO loginDTO) {
+        AuthResponseDTO<String, String> response = userService.loginUser(loginDTO);
         return ResponseEntity.ok(response);
     }
 
