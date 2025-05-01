@@ -1,4 +1,4 @@
-package com.cg.loanemicalulator;
+package com.cg.loanEmiCalculator;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
