@@ -16,6 +16,7 @@ import java.util.Collections;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -29,9 +30,12 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String email;
 
+    @Column(nullable = false)
+    private String role = "ROLE_USER"; // Default role
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(() -> "ROLE_USER");
+        return Collections.singletonList(() -> role);
     }
 
     @Override public boolean isAccountNonExpired() { return true; }

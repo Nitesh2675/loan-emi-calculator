@@ -12,7 +12,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.cg.loanemicalculator.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
@@ -32,6 +35,9 @@ public class UserService implements IUserService {
 
     @Autowired
     private JwtUtility jwtUtility;
+
+    private final Map<String, String> otpStorage = new ConcurrentHashMap<>();
+
 
 
     @Override
@@ -58,10 +64,8 @@ public class UserService implements IUserService {
         log.info("User {} registered successfully", user.getEmail());
 
         // Send registration confirmation email
-        //emailService.sendEmail(user.getEmail(), "Registered", "Hi " + user.getUsername() + ",\n\nYou have been successfully registered in the Employee Payroll App.");
+        emailService.sendEmail(user.getEmail(), "Registered", "Hi " + user.getUsername() + ",\n\nYou have been successfully registered in the Employee Payroll App.");
 
-        // Return response with success message
-        //res.setMessage("message");
         res.setMessageData("User registered successfully");
         return res;
     }
@@ -84,10 +88,7 @@ public class UserService implements IUserService {
                 log.debug("Login successful for user: {} - Token generated", user.getEmail());
 
                 // Send login confirmation email with token
-                //emailService.sendEmail(user.getEmail(), "Logged into Employee Payroll App", "Hi " + user.getUsername() + ",\n\nYou have been successfully logged in! Your token is: " + token);
-
-                // Return response with success message and token
-                //res.setMessage("message");
+                emailService.sendEmail(user.getEmail(), "Logged into Employee Payroll App", "Hi " + user.getUsername() + ",\n\nYou have been successfully logged in! Your token is: " + token);
                 res.setMessageData("Login successful");
                 res.setToken(token); // Adding token in the response DTO
                 return res;
@@ -121,7 +122,23 @@ public class UserService implements IUserService {
 
     @Override
     public AuthResponseDTO<String, String> forgotPassword(String email) {
-        return null;
+        AuthResponseDTO<String, String> res = new AuthResponseDTO<>();
+        Optional<User> userOptional = userRepository.findByEmail(email);
+
+        if (userOptional.isPresent()) {
+            String otp = String.format("%06d", new Random().nextInt(999999));
+            // Store OTP in-memory (can use a Map or cache)
+            otpStorage.put(email, otp);
+
+            emailService.sendEmail(email, "Your OTP for Password Reset", "Your OTP is: " + otp);
+            res.setMessage("message");
+            res.setMessageData("OTP sent to your email.");
+        } else {
+            res.setMessage("error");
+            res.setMessageData("User not found.");
+        }
+
+        return res;
     }
 
     @Override
