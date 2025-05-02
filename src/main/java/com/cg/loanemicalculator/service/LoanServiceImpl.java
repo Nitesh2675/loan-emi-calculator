@@ -1,5 +1,7 @@
 package com.cg.loanemicalculator.service;
 
+import com.cg.loanemicalculator.dto.EmiRequestDto;
+import com.cg.loanemicalculator.dto.EmiResponseDto;
 import com.cg.loanemicalculator.dto.LoanDTO;
 import com.cg.loanemicalculator.dto.LoanRequestDTO;
 import com.cg.loanemicalculator.exception.ResourceNotFound;
@@ -9,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -18,32 +19,36 @@ import java.util.List;
 public class LoanServiceImpl implements LoanService {
 
     private final LoanRepository loanRepository;
+    private final EmiService emiService;
 
     @Override
     public LoanDTO createLoan(LoanRequestDTO loanRequestDTO) {
         Integer userId = loanRequestDTO.getUserId();
         log.info("Creating a new loan for user {}", userId);
 
-        //calculated from emi calculator
-        BigDecimal emi = new BigDecimal(0);
-        BigDecimal totalInterest = new BigDecimal(0);
-        BigDecimal totalPayment = new BigDecimal(0);
+        EmiRequestDto emiReq = EmiRequestDto.builder()
+                .principal(loanRequestDTO.getPrincipalAmount())
+                .annualRatePct(loanRequestDTO.getAnnualInterestRate())
+                .tenureMonths(loanRequestDTO.getTenureMonths())
+                .build();
+
+        EmiResponseDto emiResp = emiService.calculateEmi(emiReq);
 
         Loan loan = Loan.builder()
                 .name(loanRequestDTO.getName())
                 .principalAmount(loanRequestDTO.getPrincipalAmount())
                 .annualInterestRate(loanRequestDTO.getAnnualInterestRate())
                 .tenureMonths(loanRequestDTO.getTenureMonths())
-                .emi(emi)
                 .startDate(loanRequestDTO.getStartDate())
                 .status(Loan.LoanStatus.ACTIVE)
-                .totalInterest(totalInterest)
-                .totalPayment(totalPayment)
-                .userId(userId)
+                .emi(emiResp.getEmi())
+                .totalPayment(emiResp.getTotalPayment())
+                .totalInterest(emiResp.getTotalInterest())
+                .userId(loanRequestDTO.getUserId())
                 .build();
 
-        loan  = loanRepository.save(loan);
-        log.info("Created a new loan for user {}", userId);
+        loan = loanRepository.save(loan);
+        log.info("Created loan {} → EMI {} for user {}", loan.getId(), emiResp.getEmi(), loan.getUserId());
         return convertToLoanDTO(loan);
     }
 
@@ -58,6 +63,17 @@ public class LoanServiceImpl implements LoanService {
         loan.setAnnualInterestRate(loanRequestDTO.getAnnualInterestRate());
         loan.setTenureMonths(loanRequestDTO.getTenureMonths());
         loan.setStartDate(loanRequestDTO.getStartDate());
+
+        EmiRequestDto emiReq = EmiRequestDto.builder()
+                .principal(loan.getPrincipalAmount())
+                .annualRatePct(loan.getAnnualInterestRate())
+                .tenureMonths(loan.getTenureMonths())
+                .build();
+        EmiResponseDto emiResp = emiService.calculateEmi(emiReq);
+
+        loan.setEmi(emiResp.getEmi());
+        loan.setTotalPayment(emiResp.getTotalPayment());
+        loan.setTotalInterest(emiResp.getTotalInterest());
 
         loanRepository.save(loan);
         log.info("Updated loan with id {}", loanId);

@@ -1,9 +1,13 @@
 package com.cg.loanemicalculator.controller;
 
+import com.cg.loanemicalculator.dto.EmiRequestDto;
+import com.cg.loanemicalculator.dto.EmiResponseDto;
 import com.cg.loanemicalculator.dto.LoanDTO;
 import com.cg.loanemicalculator.dto.LoanRequestDTO;
+import com.cg.loanemicalculator.service.EmiService;
 import com.cg.loanemicalculator.service.LoanService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +21,7 @@ import java.util.List;
 public class LoanController {
 
     private final LoanService loanService;
+    private final EmiService emiService;
 
     @PostMapping
     public ResponseEntity<LoanDTO> createLoan(HttpServletRequest request, @RequestBody LoanRequestDTO loanRequestDTO) {
@@ -43,6 +48,13 @@ public class LoanController {
     @GetMapping("/{userId}")
     public ResponseEntity<List<LoanDTO>> getUserLoans(@PathVariable Integer userId) {
         return new ResponseEntity<>(loanService.getUserLoans(userId), HttpStatus.OK);
+    }
+
+    @PostMapping("/calculate-emi")
+    public ResponseEntity<EmiResponseDto> calculateEmi(
+            @Valid @RequestBody EmiRequestDto req) {
+        EmiResponseDto resp = emiService.calculateEmi(req);
+        return ResponseEntity.ok(resp);
     }
 
 }
