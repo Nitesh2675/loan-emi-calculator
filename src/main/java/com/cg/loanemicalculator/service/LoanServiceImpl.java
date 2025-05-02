@@ -24,7 +24,10 @@ public class LoanServiceImpl implements LoanService {
         Integer userId = loanRequestDTO.getUserId();
         log.info("Creating a new loan for user {}", userId);
 
-        BigDecimal emi = new BigDecimal(0); // emi value calculated from emi calculator
+        //calculated from emi calculator
+        BigDecimal emi = new BigDecimal(0);
+        BigDecimal totalInterest = new BigDecimal(0);
+        BigDecimal totalPayment = new BigDecimal(0);
 
         Loan loan = Loan.builder()
                 .name(loanRequestDTO.getName())
@@ -34,6 +37,8 @@ public class LoanServiceImpl implements LoanService {
                 .emi(emi)
                 .startDate(loanRequestDTO.getStartDate())
                 .status(Loan.LoanStatus.ACTIVE)
+                .totalInterest(totalInterest)
+                .totalPayment(totalPayment)
                 .userId(userId)
                 .build();
 
@@ -88,6 +93,8 @@ public class LoanServiceImpl implements LoanService {
                 .startDate(loan.getStartDate())
                 .emi(loan.getEmi())
                 .userId(loan.getUserId())
+                .totalPayment(loan.getTotalPayment())
+                .totalInterest(loan.getTotalInterest())
                 .status(loan.getStatus().name())
                 .build();
     }

@@ -42,6 +42,12 @@ public class Loan {
     @Column(nullable = false)
     private LocalDate startDate;
 
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal totalInterest;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal totalPayment;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private LoanStatus status;

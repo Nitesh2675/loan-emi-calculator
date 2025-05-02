@@ -20,6 +20,8 @@ public class LoanDTO {
     private BigDecimal annualInterestRate;
     private Integer tenureMonths;
     private BigDecimal emi;
+    private BigDecimal totalInterest;
+    private BigDecimal totalPayment;
     private LocalDate startDate;
     private String status;
 }
