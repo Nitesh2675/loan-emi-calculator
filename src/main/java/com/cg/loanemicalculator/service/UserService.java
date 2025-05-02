@@ -109,17 +109,6 @@ public class UserService implements IUserService {
     }
 
 
-
-
-    @Override
-    public Optional<User> getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
-
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
-    }
-
     @Override
     public AuthResponseDTO<String, String> forgotPassword(String email) {
         AuthResponseDTO<String, String> res = new AuthResponseDTO<>();
@@ -131,7 +120,6 @@ public class UserService implements IUserService {
             otpStorage.put(email, otp);
 
             emailService.sendEmail(email, "Your OTP for Password Reset", "Your OTP is: " + otp);
-            res.setMessage("message");
             res.setMessageData("OTP sent to your email.");
         } else {
             res.setMessage("error");
@@ -143,7 +131,36 @@ public class UserService implements IUserService {
 
     @Override
     public AuthResponseDTO<String, String> resetPassword(String email, String otp, String newPassword) {
-        return null;
+        AuthResponseDTO<String, String> res = new AuthResponseDTO<>();
+        String storedOtp = otpStorage.get(email); // In-memory map
+
+        if (storedOtp != null && storedOtp.equals(otp)) {
+            Optional<User> userOptional = userRepository.findByEmail(email);
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+                user.setPassword(passwordEncoder.encode(newPassword));
+                userRepository.save(user);
+                otpStorage.remove(email); // Clear OTP after use
+                res.setMessageData("Password successfully reset.");
+            } else {
+                res.setMessage("error");
+                res.setMessageData("User not found.");
+            }
+        } else {
+            res.setMessage("error");
+            res.setMessageData("Invalid or expired OTP.");
+        }
+
+        return res;
+    }
+
+    @Override
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
 
 
