@@ -46,10 +46,22 @@ public class LoanController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<LoanDTO>> getUserLoans(@PathVariable Integer userId) {
-        return new ResponseEntity<>(loanService.getUserLoans(userId), HttpStatus.OK);
+//    @GetMapping("/{userId}")
+//    public ResponseEntity<List<LoanDTO>> getUserLoans(@PathVariable Integer userId) {
+//        return new ResponseEntity<>(loanService.getUserLoans(userId), HttpStatus.OK);
+//    }
+@GetMapping("")
+public ResponseEntity<List<LoanDTO>> getUserLoans(HttpServletRequest request) {
+    Integer userId = (Integer) request.getAttribute("userId");
+
+    if (userId == null) {
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
+
+    List<LoanDTO> loans = loanService.getUserLoans(userId);
+    return new ResponseEntity<>(loans, HttpStatus.OK);
+}
+
 
     @PostMapping("/calculate-emi")
     public ResponseEntity<EmiResponseDto> calculateEmi(
