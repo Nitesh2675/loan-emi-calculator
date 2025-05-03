@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface AmortizationScheduleRepository extends JpaRepository<AmortizationSchedule, Long> {
     List<AmortizationSchedule> findByLoanId(Integer loanId);
+
+    List<AmortizationSchedule> findByLoanIdOrderByIdAsc(Integer loanId);
 }
