@@ -42,6 +42,9 @@ public class Loan {
     @Column(nullable = false)
     private LocalDate startDate;
 
+    @Column(nullable = false)
+    private BigDecimal outstandingPrincipal;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalInterest;
 
