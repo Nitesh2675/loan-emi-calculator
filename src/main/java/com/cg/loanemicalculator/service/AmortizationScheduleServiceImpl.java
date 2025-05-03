@@ -45,9 +45,10 @@ public class AmortizationScheduleServiceImpl implements AmortizationScheduleServ
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Loan not found with ID: " + loanId));
 
-        // Check if schedule already exists for the loan (prevents duplicate entries)
-        if (!scheduleRepository.findByLoanId(loanId).isEmpty()) {
-            throw new IllegalArgumentException("Amortization schedule already exists for this loan.");
+        // Check if schedule already exists for this loan
+        boolean alreadyExists = scheduleRepository.existsByLoanId(loanId);
+        if (alreadyExists) {
+            throw new IllegalStateException("Amortization schedule already exists for Loan ID: " + loanId);
         }
 
         List<AmortizationScheduleEntryDto> scheduleDtoList = ScheduleGeneratorUtil.generateSchedule(loan);
@@ -62,11 +63,11 @@ public class AmortizationScheduleServiceImpl implements AmortizationScheduleServ
                         .principalComponent(dto.getPrincipalComponent())
                         .interestComponent(dto.getInterestComponent())
                         .endingBalance(dto.getEndingBalance())
-                        .repaymentDone(false) // Default value, indicating payment not yet made
+                        .repaymentDone(false)
                         .build())
                 .collect(Collectors.toList());
 
-        // Save all generated schedules to the DB
         scheduleRepository.saveAll(scheduleEntities);
     }
+
 }
