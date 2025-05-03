@@ -1,17 +1,16 @@
 package com.cg.loanemicalculator.service;
 
-import com.cg.loanemicalculator.dto.EmiRequestDto;
-import com.cg.loanemicalculator.dto.EmiResponseDto;
-import com.cg.loanemicalculator.dto.LoanDTO;
-import com.cg.loanemicalculator.dto.LoanRequestDTO;
+import com.cg.loanemicalculator.dto.*;
 import com.cg.loanemicalculator.exception.ResourceNotFound;
 import com.cg.loanemicalculator.model.Loan;
 import com.cg.loanemicalculator.repository.LoanRepository;
+import com.cg.loanemicalculator.security.ResourceOwnershipValidator;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import java.time.LocalDate;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -21,6 +20,7 @@ public class LoanServiceImpl implements LoanService {
 
     private final LoanRepository loanRepository;
     private final EmiService emiService;
+    private final ResourceOwnershipValidator authz;   // ← new
 
     @Override
     public LoanDTO createLoan(LoanRequestDTO loanRequestDTO) {
@@ -59,6 +59,7 @@ public class LoanServiceImpl implements LoanService {
         log.info("Updating loan with id {}", loanId);
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new ResourceNotFound("Loan not found with id " + loanId + " for loan creation"));
+        authz.validateLoanOwnership(loan, loanRequestDTO.getUserId());
 
         loan.setName(loanRequestDTO.getName());
         loan.setPrincipalAmount(loanRequestDTO.getPrincipalAmount());
@@ -84,8 +85,10 @@ public class LoanServiceImpl implements LoanService {
     }
 
     @Override
-    public void deleteLoan(Integer loanId) {
-        log.info("Deleting loan with id {}", loanId);
+    public void deleteLoan(Integer loanId, Integer userId) {
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFound("Loan not found with id " + loanId));
+        authz.validateLoanOwnership(loan, userId);
         loanRepository.deleteById(loanId);
         log.info("Deleted loan with id {}", loanId);
     }
@@ -119,9 +122,11 @@ public class LoanServiceImpl implements LoanService {
     }
 
     @Override
-    public LoanDTO toggleLoanStatus(Integer loanId, Loan.LoanStatus newStatus) {
+    public LoanDTO toggleLoanStatus(Integer loanId, Loan.LoanStatus newStatus, Integer userId) {
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new ResourceNotFound("Loan not found with id " + loanId));
+        authz.validateLoanOwnership(loan, userId);
+
         loan.setStatus(newStatus);
         loanRepository.save(loan);
         return convertToLoanDTO(loan);

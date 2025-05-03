@@ -9,8 +9,8 @@ import java.util.List;
 public interface LoanService {
     LoanDTO createLoan(LoanRequestDTO loanRequestDTO);
     LoanDTO updateLoan(Integer loanId, LoanRequestDTO loanRequestDTO);
-    void deleteLoan(Integer loanId);
+    void deleteLoan(Integer loanId, Integer userId);
     List<LoanDTO> getUserLoans(Integer userId);
-    LoanDTO toggleLoanStatus(Integer loanId, Loan.LoanStatus newStatus);
-    void evaluateAndMarkLoans(); // for demo purpose
+    LoanDTO toggleLoanStatus(Integer loanId, Loan.LoanStatus newStatus, Integer userId);
+    void evaluateAndMarkLoans();
 }

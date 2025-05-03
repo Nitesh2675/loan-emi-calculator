@@ -4,6 +4,7 @@ import com.cg.loanemicalculator.dto.EmiRequestDto;
 import com.cg.loanemicalculator.dto.EmiResponseDto;
 import com.cg.loanemicalculator.dto.LoanDTO;
 import com.cg.loanemicalculator.dto.LoanRequestDTO;
+import com.cg.loanemicalculator.model.Loan;
 import com.cg.loanemicalculator.service.EmiService;
 import com.cg.loanemicalculator.service.LoanService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.cg.loanemicalculator.model.Loan;
 
 import java.util.List;
 
@@ -25,55 +25,67 @@ public class LoanController {
     private final EmiService emiService;
 
     @PostMapping
-    public ResponseEntity<LoanDTO> createLoan(HttpServletRequest request, @RequestBody LoanRequestDTO loanRequestDTO) {
+    public ResponseEntity<LoanDTO> createLoan(
+            HttpServletRequest request,
+            @RequestBody LoanRequestDTO loanRequestDTO) {
+
         Integer userId = (Integer) request.getAttribute("userId");
-        if (userId != null) {
-            loanRequestDTO.setUserId(userId);
-        }
+        loanRequestDTO.setUserId(userId);
         LoanDTO loanDTO = loanService.createLoan(loanRequestDTO);
         return new ResponseEntity<>(loanDTO, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<LoanDTO> updateLoan(@RequestBody LoanRequestDTO loanRequestDTO, @PathVariable Integer id) {
+    public ResponseEntity<LoanDTO> updateLoan(
+            HttpServletRequest request,
+            @RequestBody LoanRequestDTO loanRequestDTO,
+            @PathVariable Integer id) {
+
+        Integer userId = (Integer) request.getAttribute("userId");
+        loanRequestDTO.setUserId(userId);
         LoanDTO loanDTO = loanService.updateLoan(id, loanRequestDTO);
         return new ResponseEntity<>(loanDTO, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteLoan(@PathVariable Integer id) {
-        loanService.deleteLoan(id);
+    public ResponseEntity<Void> deleteLoan(
+            HttpServletRequest request,
+            @PathVariable Integer id) {
+
+        Integer userId = (Integer) request.getAttribute("userId");
+        loanService.deleteLoan(id, userId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-//    @GetMapping("/{userId}")
-//    public ResponseEntity<List<LoanDTO>> getUserLoans(@PathVariable Integer userId) {
-//        return new ResponseEntity<>(loanService.getUserLoans(userId), HttpStatus.OK);
-//    }
-@GetMapping("")
-public ResponseEntity<List<LoanDTO>> getUserLoans(HttpServletRequest request) {
-    Integer userId = (Integer) request.getAttribute("userId");
+    @GetMapping
+    public ResponseEntity<List<LoanDTO>> getUserLoans(
+            HttpServletRequest request) {
 
-    if (userId == null) {
-        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        Integer userId = (Integer) request.getAttribute("userId");
+        if (userId == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        List<LoanDTO> loans = loanService.getUserLoans(userId);
+        return new ResponseEntity<>(loans, HttpStatus.OK);
     }
-
-    List<LoanDTO> loans = loanService.getUserLoans(userId);
-    return new ResponseEntity<>(loans, HttpStatus.OK);
-}
-
 
     @PostMapping("/calculate-emi")
     public ResponseEntity<EmiResponseDto> calculateEmi(
             @Valid @RequestBody EmiRequestDto req) {
+
         EmiResponseDto resp = emiService.calculateEmi(req);
         return ResponseEntity.ok(resp);
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<LoanDTO> toggleLoanStatus(@PathVariable Integer id, @RequestParam String status) {
-        Loan.LoanStatus newStatus = Loan.LoanStatus.valueOf(status.toUpperCase());
-        LoanDTO updatedLoan = loanService.toggleLoanStatus(id, newStatus);
+    public ResponseEntity<LoanDTO> toggleLoanStatus(
+            HttpServletRequest request,
+            @PathVariable Integer id,
+            @RequestParam String status) {
+
+        Integer userId = (Integer) request.getAttribute("userId");
+        Loan.LoanStatus newStatus = Loan.LoanStatus.valueOf(status.trim().toUpperCase());
+        LoanDTO updatedLoan = loanService.toggleLoanStatus(id, newStatus, userId);
         return new ResponseEntity<>(updatedLoan, HttpStatus.OK);
     }
 
@@ -82,6 +94,4 @@ public ResponseEntity<List<LoanDTO>> getUserLoans(HttpServletRequest request) {
         loanService.evaluateAndMarkLoans();
         return new ResponseEntity<>(HttpStatus.OK);
     }
-
-
 }
