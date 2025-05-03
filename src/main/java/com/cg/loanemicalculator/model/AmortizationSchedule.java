@@ -33,4 +33,7 @@ public class AmortizationSchedule {
     private BigDecimal interestComponent;
 
     private BigDecimal endingBalance;
+
+    @Column(name = "repayment_done")
+    private boolean repaymentDone = false;
 }

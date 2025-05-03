@@ -27,7 +27,7 @@ public class ScheduleGeneratorUtil {
             BigDecimal principalComponent = emi.subtract(interestComponent)
                     .setScale(2, RoundingMode.HALF_EVEN);
 
-            // Prevent negative balance in the last installment
+            // Prevent overpayment in the final installment
             if (principalComponent.compareTo(balance) > 0) {
                 principalComponent = balance;
                 emi = principalComponent.add(interestComponent);
@@ -43,7 +43,8 @@ public class ScheduleGeneratorUtil {
                     emi,
                     principalComponent,
                     interestComponent,
-                    endingBalance
+                    endingBalance,
+                    false // Default to ✗ unpaid
             ));
 
             balance = endingBalance;

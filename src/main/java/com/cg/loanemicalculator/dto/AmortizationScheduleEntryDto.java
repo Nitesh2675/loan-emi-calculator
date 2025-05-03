@@ -16,5 +16,8 @@ public class AmortizationScheduleEntryDto {
     private BigDecimal principalComponent;
     private BigDecimal interestComponent;
     private BigDecimal endingBalance;
+
+    // ✅ New field
+    private boolean repaymentDone; // false = ✗, true = ✓
 }
 

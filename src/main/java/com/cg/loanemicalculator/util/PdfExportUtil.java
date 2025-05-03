@@ -10,54 +10,55 @@ import java.util.List;
 public class PdfExportUtil {
 
     public static byte[] exportToPdf(List<AmortizationScheduleEntryDto> schedule) {
-        // Create a document with A4 page size (portrait)
-        Document document = new Document(PageSize.A4);
+        Document document = new Document(PageSize.A4.rotate()); // Optional: Rotate for wider layout
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         try {
-            // Create PdfWriter to write the document content to the byte output stream
             PdfWriter.getInstance(document, baos);
             document.open();
 
-            // Title setup
             Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
             Paragraph title = new Paragraph("Amortization Schedule", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             document.add(title);
-            document.add(Chunk.NEWLINE); // Add extra space after the title
+            document.add(Chunk.NEWLINE);
 
-            // Create a table with 7 columns
-            PdfPTable table = new PdfPTable(7);
+            // 8 columns now, to include Repayment Status
+            PdfPTable table = new PdfPTable(8);
             table.setWidthPercentage(100);
-            table.setWidths(new float[]{1f, 2f, 2f, 2f, 2f, 2f, 2f}); // Set relative column widths
+            table.setWidths(new float[]{1f, 2f, 2f, 2f, 2f, 2f, 2f, 1.5f});
 
-            // Header Row: Define columns names with bold font
             Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
-            String[] headers = {"Month", "Payment Date", "Beginning Balance", "EMI", "Principal", "Interest", "Ending Balance"};
+            String[] headers = {
+                    "Month", "Payment Date", "Beginning Balance", "EMI",
+                    "Principal", "Interest", "Ending Balance", "Repayment"
+            };
 
-            // Adding header cells to the table
             for (String header : headers) {
                 PdfPCell cell = new PdfPCell(new Phrase(header, headerFont));
-                cell.setHorizontalAlignment(Element.ALIGN_CENTER); // Align text to the center
-                cell.setBackgroundColor(BaseColor.LIGHT_GRAY); // Set background color
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
                 table.addCell(cell);
             }
 
-            // Content Row: Adding data from schedule
-            Font contentFont = FontFactory.getFont(FontFactory.HELVETICA, 9); // Regular font for content
+            Font contentFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
             for (AmortizationScheduleEntryDto entry : schedule) {
-                table.addCell(new PdfPCell(new Phrase(String.valueOf(entry.getMonth()), contentFont)));
-                table.addCell(new PdfPCell(new Phrase(entry.getPaymentDate().toString(), contentFont)));
-                table.addCell(new PdfPCell(new Phrase(entry.getBeginningBalance().toPlainString(), contentFont)));
-                table.addCell(new PdfPCell(new Phrase(entry.getEmi().toPlainString(), contentFont)));
-                table.addCell(new PdfPCell(new Phrase(entry.getPrincipalComponent().toPlainString(), contentFont)));
-                table.addCell(new PdfPCell(new Phrase(entry.getInterestComponent().toPlainString(), contentFont)));
-                table.addCell(new PdfPCell(new Phrase(entry.getEndingBalance().toPlainString(), contentFont)));
+                table.addCell(new Phrase(String.valueOf(entry.getMonth()), contentFont));
+                table.addCell(new Phrase(entry.getPaymentDate().toString(), contentFont));
+                table.addCell(new Phrase(entry.getBeginningBalance().toPlainString(), contentFont));
+                table.addCell(new Phrase(entry.getEmi().toPlainString(), contentFont));
+                table.addCell(new Phrase(entry.getPrincipalComponent().toPlainString(), contentFont));
+                table.addCell(new Phrase(entry.getInterestComponent().toPlainString(), contentFont));
+                table.addCell(new Phrase(entry.getEndingBalance().toPlainString(), contentFont));
+
+                // Repayment column: show ✅ if true, ✗ if false
+                String status = entry.isRepaymentDone() ? "✅" : "✗";
+                PdfPCell statusCell = new PdfPCell(new Phrase(status, contentFont));
+                statusCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(statusCell);
             }
 
-            // Add table to document
             document.add(table);
-
         } catch (Exception e) {
             throw new RuntimeException("Error generating amortization PDF", e);
         } finally {
