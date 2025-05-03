@@ -10,6 +10,7 @@ import com.cg.loanemicalculator.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 
 import java.util.List;
 
@@ -113,5 +114,29 @@ public class LoanServiceImpl implements LoanService {
                 .totalInterest(loan.getTotalInterest())
                 .status(loan.getStatus().name())
                 .build();
+    }
+
+    @Override
+    public LoanDTO toggleLoanStatus(Integer loanId, Loan.LoanStatus newStatus) {
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFound("Loan not found with id " + loanId));
+        loan.setStatus(newStatus);
+        loanRepository.save(loan);
+        return convertToLoanDTO(loan);
+    }
+
+    @Override
+    public void evaluateAndMarkLoans() {
+        List<Loan> allLoans = loanRepository.findAll();
+
+        LocalDate today = LocalDate.now();
+        for (Loan loan : allLoans) {
+            LocalDate endDate = loan.getStartDate().plusMonths(loan.getTenureMonths());
+            if (today.isAfter(endDate) && loan.getStatus() == Loan.LoanStatus.ACTIVE) {
+                loan.setStatus(Loan.LoanStatus.CLOSED);
+                loanRepository.save(loan);
+                log.info("Auto-marked loan {} as CLOSED", loan.getId());
+            }
+        }
     }
 }

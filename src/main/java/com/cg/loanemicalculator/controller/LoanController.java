@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.cg.loanemicalculator.model.Loan;
 
 import java.util.List;
 
@@ -56,5 +57,19 @@ public class LoanController {
         EmiResponseDto resp = emiService.calculateEmi(req);
         return ResponseEntity.ok(resp);
     }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<LoanDTO> toggleLoanStatus(@PathVariable Integer id, @RequestParam String status) {
+        Loan.LoanStatus newStatus = Loan.LoanStatus.valueOf(status.toUpperCase());
+        LoanDTO updatedLoan = loanService.toggleLoanStatus(id, newStatus);
+        return new ResponseEntity<>(updatedLoan, HttpStatus.OK);
+    }
+
+    @GetMapping("/evaluate-status")
+    public ResponseEntity<Void> evaluateAndMarkLoanStatuses() {
+        loanService.evaluateAndMarkLoans();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 
 }
