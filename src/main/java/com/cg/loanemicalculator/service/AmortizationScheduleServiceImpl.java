@@ -1,21 +1,24 @@
 package com.cg.loanemicalculator.service;
 
 import com.cg.loanemicalculator.dto.AmortizationScheduleEntryDto;
+import com.cg.loanemicalculator.model.AmortizationSchedule;
 import com.cg.loanemicalculator.model.Loan;
+import com.cg.loanemicalculator.repository.AmortizationScheduleRepository;
 import com.cg.loanemicalculator.repository.LoanRepository;
-import com.cg.loanemicalculator.service.AmortizationScheduleService;
 import com.cg.loanemicalculator.util.PdfExportUtil;
 import com.cg.loanemicalculator.util.ScheduleGeneratorUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AmortizationScheduleServiceImpl implements AmortizationScheduleService {
 
     private final LoanRepository loanRepository;
+    private final AmortizationScheduleRepository scheduleRepository;
 
     @Override
     public List<AmortizationScheduleEntryDto> generateSchedule(Integer loanId) {
@@ -37,5 +40,26 @@ public class AmortizationScheduleServiceImpl implements AmortizationScheduleServ
         }
     }
 
-}
+    @Override
+    public void generateAndSaveSchedule(Integer loanId) {
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new IllegalArgumentException("Loan not found with ID: " + loanId));
 
+        List<AmortizationScheduleEntryDto> scheduleDtoList = ScheduleGeneratorUtil.generateSchedule(loan);
+
+        List<AmortizationSchedule> scheduleEntities = scheduleDtoList.stream()
+                .map(dto -> AmortizationSchedule.builder()
+                        .loanId(loanId)
+                        .month(dto.getMonth())
+                        .paymentDate(dto.getPaymentDate())
+                        .beginningBalance(dto.getBeginningBalance())
+                        .emi(dto.getEmi())
+                        .principalComponent(dto.getPrincipalComponent())
+                        .interestComponent(dto.getInterestComponent())
+                        .endingBalance(dto.getEndingBalance())
+                        .build())
+                .collect(Collectors.toList());
+
+        scheduleRepository.saveAll(scheduleEntities);
+    }
+}
