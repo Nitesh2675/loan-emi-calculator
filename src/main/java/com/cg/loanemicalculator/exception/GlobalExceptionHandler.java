@@ -1,13 +1,14 @@
 package com.cg.loanemicalculator.exception;
 
-
+import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.validation.BindingResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,16 +17,44 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        BindingResult bindingResult = ex.getBindingResult();
-        Map<String, String> errorMap = new HashMap<>();
+    public ResponseEntity<Map<String, String>> handleValidationErrors(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
 
-        for (FieldError fieldError : bindingResult.getFieldErrors()) {
-            errorMap.put(fieldError.getField(), fieldError.getDefaultMessage());
-        }
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage())
+        );
 
-        // Return Unauthorized response with validation error details
-        return new ResponseEntity<>(errorMap, HttpStatus.UNAUTHORIZED);
+        return ResponseEntity.badRequest().body(errors);
     }
-}
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ArithmeticException.class)
+    public ResponseEntity<String> handleArithmeticException(ArithmeticException ex) {
+        return new ResponseEntity<>("Calculation error: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<String> handleUsernameNotFoundException(UsernameNotFoundException ex) {
+        return new ResponseEntity<>("User not found: " + ex.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<String> handleJwtException(JwtException ex) {
+        return new ResponseEntity<>("Invalid or expired token: " + ex.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(ResourceNotFound.class)
+    public ResponseEntity<String> handleResourceNotFound(ResourceNotFound ex) {
+        return new ResponseEntity<>("Resource not found: " + ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
+        return new ResponseEntity<>("Unexpected error: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+}
