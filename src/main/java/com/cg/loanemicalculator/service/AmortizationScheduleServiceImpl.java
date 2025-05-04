@@ -9,6 +9,7 @@ import com.cg.loanemicalculator.util.PdfExportUtil;
 import com.cg.loanemicalculator.util.ScheduleGeneratorUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.cg.loanemicalculator.security.ResourceOwnershipValidator;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,18 +20,22 @@ public class AmortizationScheduleServiceImpl implements AmortizationScheduleServ
 
     private final LoanRepository loanRepository;
     private final AmortizationScheduleRepository scheduleRepository;
+    private final ResourceOwnershipValidator authz;
+
 
     @Override
-    public List<AmortizationScheduleEntryDto> generateSchedule(Integer loanId) {
+    public List<AmortizationScheduleEntryDto> generateSchedule(Integer loanId,  Integer userId) {
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Loan not found with ID: " + loanId));
+        authz.validateLoanOwnership(loan, userId);
         return ScheduleGeneratorUtil.generateSchedule(loan);
     }
 
     @Override
-    public byte[] exportSchedule(Integer loanId, String format) {
+    public byte[] exportSchedule(Integer loanId, String format,  Integer userId) {
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Loan not found with ID: " + loanId));
+        authz.validateLoanOwnership(loan, userId);
         List<AmortizationScheduleEntryDto> schedule = ScheduleGeneratorUtil.generateSchedule(loan);
 
         if ("pdf".equalsIgnoreCase(format)) {
@@ -41,9 +46,10 @@ public class AmortizationScheduleServiceImpl implements AmortizationScheduleServ
     }
 
     @Override
-    public void generateAndSaveSchedule(Integer loanId) {
+    public void generateAndSaveSchedule(Integer loanId,  Integer userId) {
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Loan not found with ID: " + loanId));
+        authz.validateLoanOwnership(loan, userId);
 
         // Check if schedule already exists for this loan
         boolean alreadyExists = scheduleRepository.existsByLoanId(loanId);
