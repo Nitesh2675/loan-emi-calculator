@@ -41,10 +41,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>("User not found: " + ex.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
-    @ExceptionHandler(JwtException.class)
-    public ResponseEntity<String> handleJwtException(JwtException ex) {
-        return new ResponseEntity<>("Invalid or expired token: " + ex.getMessage(), HttpStatus.UNAUTHORIZED);
-    }
+//    @ExceptionHandler(JwtException.class)
+//    public ResponseEntity<Map<String, String>> handleJwtException(JwtException ex) {
+//        Map<String, String> error = new HashMap<>();
+//        error.put("error", "Unauthorized");
+//        error.put("message", "Invalid or expired token: " + ex.getMessage());
+//        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+//    }
 
     @ExceptionHandler(ResourceNotFound.class)
     public ResponseEntity<String> handleResourceNotFound(ResourceNotFound ex) {
