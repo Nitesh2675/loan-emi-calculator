@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
-public class UserService implements IUserService {
+public class  UserService implements IUserService {
 
 
 
@@ -54,7 +54,7 @@ public class UserService implements IUserService {
         }
 
         // Creating a new User object from RegisterDTO
-        User user = new User();
+          User user = new User();
         user.setUsername(registerDTO.getUsername());
         user.setEmail(registerDTO.getEmail());
         user.setPassword(registerDTO.getPassword());
@@ -83,7 +83,8 @@ public class UserService implements IUserService {
 
             // Validate password
             if (matchPassword(loginDTO.getPassword(), user.getPassword())) {
-                String token = jwtUtility.generateToken(user.getEmail()); // Generate JWT token
+                jwtUtility.invalidateToken(user.getEmail()); // Invalidate old token if exists
+                String token = jwtUtility.generateToken(user.getEmail()); // Generate new token
 
                 log.debug("Login successful for user: {} - Token generated", user.getEmail());
 

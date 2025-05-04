@@ -10,39 +10,42 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 @Component
 public class JwtUtility {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    // Use a strong key and consistent setup
-    private static final String SECRET_KEY = "fd123gbj23hu12h3k123j123fd123gbj23hu12h3k123j123"; // at least 256 bits
+    private static final String SECRET_KEY = "fd123gbj23hu12h3k123j123fd123gbj23hu12h3k123j123";
     private static final SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
 
+    // In-memory store for valid tokens. Replace with Redis for production.
+    private final Map<String, String> validTokens = new ConcurrentHashMap<>();
+
     public String generateToken(String email) {
-        return Jwts.builder()
+        String token = Jwts.builder()
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000)) // 1 hour
+                .setExpiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+
+        validTokens.put(email, token); // Overwrite old token
+        return token;
     }
 
     public String extractEmail(String token) throws JwtException {
-        Claims claims = Jwts.parserBuilder()
+        return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
-                .getBody();
-        return claims.getSubject();
+                .getBody()
+                .getSubject();
     }
 
     public boolean validateToken(String token, String userEmail) throws JwtException {
-        String email = extractEmail(token); // throws JwtException if invalid/expired
-        User user = userRepository.findByEmail(email).orElse(null);
-
+        String email = extractEmail(token);
         boolean isTokenExpired = Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
@@ -51,6 +54,11 @@ public class JwtUtility {
                 .getExpiration()
                 .before(new Date());
 
-        return (user != null && email.equals(userEmail) && !isTokenExpired);
+        // Check if token matches the current valid token
+        return (email.equals(userEmail) && !isTokenExpired && token.equals(validTokens.get(email)));
+    }
+
+    public void invalidateToken(String email) {
+        validTokens.remove(email);
     }
 }
