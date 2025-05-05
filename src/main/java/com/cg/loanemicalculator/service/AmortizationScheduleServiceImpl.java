@@ -36,7 +36,7 @@ public class AmortizationScheduleServiceImpl implements AmortizationScheduleServ
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new IllegalArgumentException("Loan not found with ID: " + loanId));
         authz.validateLoanOwnership(loan, userId);
-        List<AmortizationScheduleEntryDto> schedule = ScheduleGeneratorUtil.generateSchedule(loan);
+        List<AmortizationSchedule> schedule = scheduleRepository.findByLoanIdOrderByIdAsc(loanId);
 
         if ("pdf".equalsIgnoreCase(format)) {
             return PdfExportUtil.exportToPdf(schedule);

@@ -1,6 +1,7 @@
 package com.cg.loanemicalculator.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -8,6 +9,7 @@ import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
+@Builder
 public class AmortizationScheduleEntryDto {
     private int month;
     private LocalDate paymentDate;

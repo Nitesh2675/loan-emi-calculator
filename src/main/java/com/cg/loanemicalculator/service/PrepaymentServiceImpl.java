@@ -34,6 +34,9 @@ public class PrepaymentServiceImpl implements PrepaymentService {
     @Override
     public PrepaymentDTO createPrepayment(Integer loanId, PrepaymentRequestDTO prepaymentRequestDTO, Integer userId) {
         Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFound("Loan not found"));
+        if (prepaymentRequestDTO.getAmount().compareTo(loan.getOutstandingPrincipal()) > 0){
+            throw new IllegalArgumentException("Prepayment amount is greater than outstanding principal");
+        }
         resourceOwnershipValidator.validateLoanOwnership(loan, userId);
         Prepayment prepayment = Prepayment.builder()
                 .amount(prepaymentRequestDTO.getAmount())

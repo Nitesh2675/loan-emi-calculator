@@ -1,6 +1,6 @@
 package com.cg.loanemicalculator.util;
 
-import com.cg.loanemicalculator.dto.AmortizationScheduleEntryDto;
+import com.cg.loanemicalculator.model.AmortizationSchedule;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 
@@ -9,7 +9,7 @@ import java.util.List;
 
 public class PdfExportUtil {
 
-    public static byte[] exportToPdf(List<AmortizationScheduleEntryDto> schedule) {
+    public static byte[] exportToPdf(List<AmortizationSchedule> schedule) {
         Document document = new Document(PageSize.A4.rotate()); // Optional: Rotate for wider layout
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -42,7 +42,7 @@ public class PdfExportUtil {
             }
 
             Font contentFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
-            for (AmortizationScheduleEntryDto entry : schedule) {
+            for (AmortizationSchedule entry : schedule) {
                 table.addCell(new Phrase(String.valueOf(entry.getMonth()), contentFont));
                 table.addCell(new Phrase(entry.getPaymentDate().toString(), contentFont));
                 table.addCell(new Phrase(entry.getBeginningBalance().toPlainString(), contentFont));
@@ -51,8 +51,7 @@ public class PdfExportUtil {
                 table.addCell(new Phrase(entry.getInterestComponent().toPlainString(), contentFont));
                 table.addCell(new Phrase(entry.getEndingBalance().toPlainString(), contentFont));
 
-                // Repayment column: show ✅ if true, ✗ if false
-                String status = entry.isRepaymentDone() ? "✅" : "✗";
+                String status = entry.isRepaymentDone() ? "DONE" : "PENDING";
                 PdfPCell statusCell = new PdfPCell(new Phrase(status, contentFont));
                 statusCell.setHorizontalAlignment(Element.ALIGN_CENTER);
                 table.addCell(statusCell);
