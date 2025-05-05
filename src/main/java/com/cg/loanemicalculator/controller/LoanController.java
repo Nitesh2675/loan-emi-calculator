@@ -1,12 +1,11 @@
 package com.cg.loanemicalculator.controller;
 
-import com.cg.loanemicalculator.dto.EmiRequestDto;
-import com.cg.loanemicalculator.dto.EmiResponseDto;
-import com.cg.loanemicalculator.dto.LoanDTO;
-import com.cg.loanemicalculator.dto.LoanRequestDTO;
+import com.cg.loanemicalculator.dto.*;
 import com.cg.loanemicalculator.model.Loan;
 import com.cg.loanemicalculator.service.EmiService;
 import com.cg.loanemicalculator.service.LoanService;
+import com.cg.loanemicalculator.service.PaymentService;
+import com.cg.loanemicalculator.service.PrepaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +22,8 @@ public class LoanController {
 
     private final LoanService loanService;
     private final EmiService emiService;
+    private final PaymentService paymentService;
+    private final PrepaymentService prepaymentService;
 
     @PostMapping
     public ResponseEntity<LoanDTO> createLoan(
@@ -93,5 +94,33 @@ public class LoanController {
     public ResponseEntity<Void> evaluateAndMarkLoanStatuses() {
         loanService.evaluateAndMarkLoans();
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @GetMapping("/{loanId}/payments")
+    public ResponseEntity<List<PaymentDTO>> addPayment(HttpServletRequest request, @PathVariable Integer loanId) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        List<PaymentDTO> paymentDTOList = paymentService.getPayments(loanId, userId);
+        return new ResponseEntity<>(paymentDTOList, HttpStatus.OK);
+    }
+
+    @PostMapping("/{loanId}/payment")
+    public ResponseEntity<PaymentDTO> getPayment(HttpServletRequest request, @PathVariable Integer loanId) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        PaymentDTO paymentDTO = paymentService.addPayment(loanId, userId);
+        return new ResponseEntity<>(paymentDTO, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{loanId}/prepayments")
+    public ResponseEntity<List<PrepaymentDTO>> getPrepayments(HttpServletRequest request, @PathVariable Integer loanId) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        List<PrepaymentDTO> prepaymentDTOList = prepaymentService.getPrepayments(loanId, userId);
+        return new ResponseEntity<>(prepaymentDTOList, HttpStatus.OK);
+    }
+
+    @PostMapping("/{loanId}/prepayment")
+    public ResponseEntity<PrepaymentDTO> createPrepayment(HttpServletRequest request, @PathVariable Integer loanId, @RequestBody PrepaymentRequestDTO prepaymentRequestDTO) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        PrepaymentDTO prepaymentDTO = prepaymentService.createPrepayment(loanId, prepaymentRequestDTO, userId);
+        return new ResponseEntity<>(prepaymentDTO, HttpStatus.CREATED);
     }
 }
