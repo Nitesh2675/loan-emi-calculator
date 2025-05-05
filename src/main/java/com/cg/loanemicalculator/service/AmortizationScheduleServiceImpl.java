@@ -61,7 +61,7 @@ public class AmortizationScheduleServiceImpl implements AmortizationScheduleServ
 
         List<AmortizationSchedule> scheduleEntities = scheduleDtoList.stream()
                 .map(dto -> AmortizationSchedule.builder()
-                        .loanId(loanId)
+                        .loan(loan)
                         .month(dto.getMonth())
                         .paymentDate(dto.getPaymentDate())
                         .beginningBalance(dto.getBeginningBalance())
