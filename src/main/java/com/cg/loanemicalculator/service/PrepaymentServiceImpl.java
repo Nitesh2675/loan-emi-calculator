@@ -86,10 +86,16 @@ public class PrepaymentServiceImpl implements PrepaymentService {
 
     @Override
     public List<PrepaymentDTO> getPrepayments(Integer loanId, Integer userId) {
-        Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFound("Loan not found"));
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFound("Loan not found"));
         resourceOwnershipValidator.validateLoanOwnership(loan, userId);
-        return prepaymentRepository.findPrepaymentsByLoan(loan);
+
+        return prepaymentRepository.findByLoan(loan)   // or findPrepaymentsByLoan(loan) if you used the JPQL version
+                .stream()
+                .map(this::covertToPrepaymentDTO)          // ← use the existing method
+                .collect(Collectors.toList());
     }
+
 
     private PrepaymentDTO covertToPrepaymentDTO(Prepayment prepayment) {
         return PrepaymentDTO.builder()
