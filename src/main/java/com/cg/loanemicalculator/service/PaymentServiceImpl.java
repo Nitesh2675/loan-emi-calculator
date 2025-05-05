@@ -39,7 +39,6 @@ public class PaymentServiceImpl implements PaymentService {
         AmortizationSchedule amortizationSchedule = null;
         AmortizationSchedule lastAmortizationSchedule = null;
         List<AmortizationSchedule> amortizationScheduleList = amortizationScheduleRepository.findByLoanIdOrderByIdAsc(loanId);
-        System.out.println(amortizationScheduleList);
         for (AmortizationSchedule schedule : amortizationScheduleList) {
             if (!schedule.isRepaymentDone()){
                 schedule.setRepaymentDone(true);
@@ -73,8 +72,9 @@ public class PaymentServiceImpl implements PaymentService {
 
         if (amortizationSchedule.getMonth().equals(loan.getTenureMonths())){
             loan.setStatus(Loan.LoanStatus.CLOSED);
-            loanRepository.save(loan);
         }
+        loan.setOutstandingPrincipal(loan.getOutstandingPrincipal().subtract(amortizationSchedule.getPrincipalComponent()));
+        loanRepository.save(loan);
 
         paymentRepository.save(payment);
         amortizationScheduleRepository.save(amortizationSchedule);
