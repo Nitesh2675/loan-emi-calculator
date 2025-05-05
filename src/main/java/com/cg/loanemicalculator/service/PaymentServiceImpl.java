@@ -36,7 +36,8 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment payment = new Payment();
 
-        AmortizationSchedule amortizationSchedule = new AmortizationSchedule();
+        AmortizationSchedule amortizationSchedule = null;
+        AmortizationSchedule lastAmortizationSchedule = null;
         List<AmortizationSchedule> amortizationScheduleList = amortizationScheduleRepository.findByLoanIdOrderByIdAsc(loanId);
         System.out.println(amortizationScheduleList);
         for (AmortizationSchedule schedule : amortizationScheduleList) {
@@ -45,17 +46,30 @@ public class PaymentServiceImpl implements PaymentService {
                 amortizationSchedule = schedule;
                 break;
             }
+            lastAmortizationSchedule = schedule;
         }
-
+        LocalDate lastDate;
+        if (amortizationSchedule == null){
+            throw new ResourceNotFound("No Amortization Schedule found");
+        }
+        if (lastAmortizationSchedule == null){
+            lastDate = amortizationSchedule.getPaymentDate().minusMonths(1);
+        }else{
+            lastDate = lastAmortizationSchedule.getPaymentDate();
+        }
         payment.setAmount(amortizationSchedule.getEmi());
         payment.setLoan(loan);
         payment.setDate(LocalDate.now());
 
         payment.setStatus(getPaymentStatus(
-                loan.getStartDate(),
-                loan.getTenureMonths(),
-                payment.getDate()
+                payment.getDate(),
+                lastDate,
+                amortizationSchedule.getPaymentDate()
         ));
+
+        if (payment.getStatus().equals(PaymentStatus.EARLY)){
+            throw new IllegalArgumentException("Last eligible payment has already been completed");
+        }
 
         if (amortizationSchedule.getMonth().equals(loan.getTenureMonths())){
             loan.setStatus(Loan.LoanStatus.CLOSED);
@@ -74,24 +88,10 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.getPaymentsByLoan(loan).stream().map(this:: convertToDTO).toList();
     }
 
-    private static PaymentStatus getPaymentStatus(LocalDate startDate, int tenureMonths, LocalDate paymentDate) {
-        if (paymentDate.isBefore(startDate)) {
-            return PaymentStatus.INVALID_DATE;
-        }
-
-        int yearDiff = paymentDate.getYear() - startDate.getYear();
-        int monthDiff = paymentDate.getMonthValue() - startDate.getMonthValue();
-        int totalMonthsPassed = (yearDiff * 12) + monthDiff;
-
-        if (totalMonthsPassed >= tenureMonths) {
-            totalMonthsPassed = tenureMonths - 1; // prevent overshooting the loan
-        }
-
-        LocalDate expectedDueDate = startDate.plusMonths(totalMonthsPassed);
-
-        if (paymentDate.isEqual(expectedDueDate)) {
+    private static PaymentStatus getPaymentStatus(LocalDate paymentDate, LocalDate startDate,  LocalDate expectedDueDate) {
+        if (paymentDate.isBefore(expectedDueDate) && paymentDate.isAfter(startDate)) {
             return PaymentStatus.ON_TIME;
-        } else if (paymentDate.isBefore(expectedDueDate)) {
+        } else if (paymentDate.isBefore(startDate)) {
             return PaymentStatus.EARLY;
         } else {
             return PaymentStatus.DELAYED;
