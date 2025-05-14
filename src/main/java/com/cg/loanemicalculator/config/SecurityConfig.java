@@ -34,16 +34,30 @@ public class SecurityConfig {
 
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
-        http.csrf(csrf -> csrf.disable())
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+                        // public endpoints
+                        .requestMatchers(
+                                "/auth/**",
+
+                                // springdoc OpenAPI JSON
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml",
+
+                                // swagger-ui static assets & entry‐point
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/webjars/**"
+                        ).permitAll()
+                        // everything else needs authentication
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
-        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
